@@ -1,9 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
-# FastAPI object create करो
 app = FastAPI()
 
-# Root endpoint define करो
-@app.get("/")
-def read_root():
-    return {"message": "Backend is live!"}
+# ✅ CORS allow करना जरूरी है
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Netlify और localhost दोनों से allow
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.post("/chat")
+async def chat(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt")
+    return {"response": f"You said: {prompt}"}
