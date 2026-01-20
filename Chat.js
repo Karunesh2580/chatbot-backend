@@ -5,11 +5,15 @@ function Chat() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Backend URL constant
+  const BASE_URL = "https://chatbot-backend-1-n1nf.onrender.com";
+
   const sendMessage = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
 
-    const res = await fetch("http://127.0.0.1:9000/chat", {
+    // ✅ API call updated to use Render backend
+    const res = await fetch(`${BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
