@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from openai import OpenAI
+import requests
+from transformers import pipeline
 
 app = FastAPI()
 
@@ -13,28 +14,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Initialize OpenAI client with environment variable
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+HF_TOKEN = os.getenv("HF_TOKEN")
+HF_MODEL = "mistralai/Mistral-7B-Instruct"
+
+# Local pipeline (example: distilGPT2)
+local_pipeline = pipeline("text-generation", model="distilgpt2")
 
 @app.post("/chat")
 async def chat(request: Request):
-    try:
-        data = await request.json()
-        prompt = data.get("prompt", "")
+    data = await request.json()
+    prompt = data.get("prompt", "")
 
-        if not prompt:
-            return {"response": "⚠️ No prompt received"}
+    mode = data.get("mode", "huggingface")  # default Hugging Face
 
-        # ✅ New API style
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",   # or "gpt-4" if available
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.7
+    if mode == "huggingface":
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{HF_MODEL}",
+            headers={"Authorization": f"Bearer {HF_TOKEN}"},
+            json={"inputs": prompt}
         )
-
-        answer = response.choices[0].message.content
+        result = response.json()
+        if isinstance(result, list) and "generated_text" in result[0]:
+            answer = result[0]["generated_text"]
+        else:
+            answer = str(result)
         return {"response": answer}
 
-    except Exception as e:
-        return {"response": f"⚠️ Backend error: {str(e)}"}
+    elif mode == "local":
+        result = local_pipeline(prompt, max_length=100, num_return_sequences=1)
+        answer = result[0]["generated_text"]
+        return {"response": answer}
+
+    else:
+        return {"response": "⚠️ Invalid mode selected"}
