@@ -1,11 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import openai
 import os
+from openai import OpenAI
 
 app = FastAPI()
 
-# ✅ Allow CORS for Netlify + localhost
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,8 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Set your OpenAI API key (Render → Environment Variables)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.post("/chat")
 async def chat(request: Request):
@@ -26,15 +24,14 @@ async def chat(request: Request):
         if not prompt:
             return {"response": "⚠️ No prompt received"}
 
-        # ✅ Call OpenAI ChatCompletion API
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",   # or "gpt-4" if available
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,          # limit length of response
-            temperature=0.7          # creativity level
+            max_tokens=200,
+            temperature=0.7
         )
 
-        answer = response.choices[0].message["content"]
+        answer = response.choices[0].message.content
         return {"response": answer}
 
     except Exception as e:
