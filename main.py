@@ -14,6 +14,11 @@ app.add_middleware(
 
 @app.post("/chat")
 async def chat(request: Request):
-    data = await request.json()
-    prompt = data.get("prompt")
-    return {"response": f"You said: {prompt}"}
+    try:
+        data = await request.json()
+        prompt = data.get("prompt", "")
+        if not prompt:
+            return {"response": "⚠️ No prompt received"}
+        return {"response": f"You said: {prompt}"}
+    except Exception as e:
+        return {"response": f"⚠️ Backend error: {str(e)}"}
