@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+    from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import requests
@@ -29,8 +29,9 @@ async def chat(request: Request):
     if not prompt:
         return {"response": "⚠️ No prompt received"}
 
+    # ✅ नया endpoint इस्तेमाल करो
     response = requests.post(
-        f"https://api-inference.huggingface.co/models/{HF_MODEL}",
+        f"https://router.huggingface.co/hf-inference/{HF_MODEL}",
         headers={"Authorization": f"Bearer {HF_TOKEN}"},
         json={"inputs": prompt}
     )
