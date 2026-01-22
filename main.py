@@ -17,7 +17,7 @@ app.add_middleware(
 # ✅ Hugging Face token (Render env variables में डालना होगा)
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ✅ Valid Hugging Face model (router supported)
+# ✅ Router supported model
 HF_MODEL = "bigscience/bloom"
 
 @app.get("/")
