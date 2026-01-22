@@ -17,8 +17,8 @@ app.add_middleware(
 # ✅ Hugging Face token (Render env variables में डालना होगा)
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ✅ Valid Hugging Face model (always supported)
-HF_MODEL = "gpt2"
+# ✅ Valid Hugging Face model (router supported)
+HF_MODEL = "gpt2"   # तुम चाहो तो इसे किसी और supported model से बदल सकते हो
 
 @app.get("/")
 async def root():
@@ -34,13 +34,12 @@ async def chat(request: Request):
 
     try:
         response = requests.post(
-            f"https://api-inference.huggingface.co/models/{HF_MODEL}",
+            f"https://router.huggingface.co/hf-inference/{HF_MODEL}",
             headers={"Authorization": f"Bearer {HF_TOKEN}"},
             json={"inputs": prompt},
             timeout=30
         )
 
-        # ✅ अगर response खाली या error है तो handle करो
         if response.status_code != 200:
             return {"response": f"⚠️ Hugging Face error: {response.status_code} {response.text}"}
 
@@ -49,9 +48,10 @@ async def chat(request: Request):
         except Exception:
             return {"response": "⚠️ Failed to parse Hugging Face response"}
 
-        # ✅ Handle Hugging Face response safely
         if isinstance(result, list) and "generated_text" in result[0]:
             answer = result[0]["generated_text"]
+        elif isinstance(result, dict) and "generated_text" in result:
+            answer = result["generated_text"]
         elif isinstance(result, dict) and "error" in result:
             answer = f"⚠️ Model error: {result['error']}"
         else:
