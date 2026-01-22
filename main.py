@@ -5,6 +5,7 @@ import requests
 
 app = FastAPI()
 
+# ✅ Allow frontend (Netlify) to call backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,8 +14,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ✅ Hugging Face token (Render env variables में डालना होगा)
 HF_TOKEN = os.getenv("HF_TOKEN")
-HF_MODEL = "mistralai/Mistral-7B-Instruct"  # तुम कोई भी Hugging Face model चुन सकते हो
+
+# ✅ Valid Hugging Face model (Falcon-7B-Instruct)
+HF_MODEL = "tiiuae/falcon-7b-instruct"
 
 @app.get("/")
 async def root():
@@ -36,7 +40,7 @@ async def chat(request: Request):
             timeout=30
         )
 
-        # ✅ अगर response खाली है तो handle करो
+        # ✅ अगर response खाली या error है तो handle करो
         if response.status_code != 200:
             return {"response": f"⚠️ API error: {response.status_code} {response.text}"}
 
