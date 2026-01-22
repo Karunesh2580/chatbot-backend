@@ -5,7 +5,6 @@ import requests
 
 app = FastAPI()
 
-# ✅ Allow frontend (Netlify) to call backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-HF_TOKEN = os.getenv("HF_TOKEN")   # Hugging Face token (Render env variables में डालना होगा)
+HF_TOKEN = os.getenv("HF_TOKEN")
 HF_MODEL = "mistralai/Mistral-7B-Instruct"  # तुम कोई भी Hugging Face model चुन सकते हो
 
 @app.get("/")
@@ -29,21 +28,31 @@ async def chat(request: Request):
     if not prompt:
         return {"response": "⚠️ No prompt received"}
 
-    # ✅ नया endpoint इस्तेमाल करो
-    response = requests.post(
-        f"https://router.huggingface.co/hf-inference/{HF_MODEL}",
-        headers={"Authorization": f"Bearer {HF_TOKEN}"},
-        json={"inputs": prompt}
-    )
+    try:
+        response = requests.post(
+            f"https://router.huggingface.co/hf-inference/{HF_MODEL}",
+            headers={"Authorization": f"Bearer {HF_TOKEN}"},
+            json={"inputs": prompt},
+            timeout=30
+        )
 
-    result = response.json()
+        # ✅ अगर response खाली है तो handle करो
+        if response.status_code != 200:
+            return {"response": f"⚠️ API error: {response.status_code} {response.text}"}
 
-    # ✅ Handle Hugging Face response safely
-    if isinstance(result, list) and "generated_text" in result[0]:
-        answer = result[0]["generated_text"]
-    elif isinstance(result, dict) and "error" in result:
-        answer = f"⚠️ Model error: {result['error']}"
-    else:
-        answer = str(result)
+        try:
+            result = response.json()
+        except Exception:
+            return {"response": "⚠️ Failed to parse Hugging Face response"}
 
-    return {"response": answer}
+        if isinstance(result, list) and "generated_text" in result[0]:
+            answer = result[0]["generated_text"]
+        elif isinstance(result, dict) and "error" in result:
+            answer = f"⚠️ Model error: {result['error']}"
+        else:
+            answer = str(result)
+
+        return {"response": answer}
+
+    except Exception as e:
+        return {"response": f"⚠️ Request failed: {str(e)}"}
