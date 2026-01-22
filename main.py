@@ -5,7 +5,6 @@ import requests
 
 app = FastAPI()
 
-# ✅ Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,9 +13,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ OpenAI API key from ENV
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_API_URL = "https://api.openai.com/v1/completions"
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 
 @app.get("/")
 async def root():
@@ -32,10 +30,10 @@ async def chat(request: Request):
 
     try:
         payload = {
-            "model": "text-davinci-003",   # GPT-3.5
-            "prompt": prompt,
-            "max_tokens": 200,
-            "temperature": 0.7
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 200
         }
 
         headers = {
@@ -49,7 +47,7 @@ async def chat(request: Request):
             return {"response": f"⚠️ OpenAI API error: {response.status_code} {response.text}"}
 
         result = response.json()
-        answer = result["choices"][0]["text"].strip()
+        answer = result["choices"][0]["message"]["content"].strip()
 
         return {"response": answer}
 
