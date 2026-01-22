@@ -18,7 +18,7 @@ app.add_middleware(
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # ✅ Valid Hugging Face model (router supported)
-HF_MODEL = "google/flan-t5-base"
+HF_MODEL = "bigscience/bloom"
 
 @app.get("/")
 async def root():
@@ -48,7 +48,6 @@ async def chat(request: Request):
         except Exception:
             return {"response": "⚠️ Failed to parse Hugging Face response"}
 
-        # ✅ Handle Hugging Face response safely
         if isinstance(result, list) and "generated_text" in result[0]:
             answer = result[0]["generated_text"]
         elif isinstance(result, dict) and "generated_text" in result:
