@@ -14,11 +14,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Hugging Face Token from Railway ENV
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-# ✅ Working model
-HF_MODEL = "distilgpt2"
+# ✅ OpenAI API key from ENV
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_URL = "https://api.openai.com/v1/completions"
 
 @app.get("/")
 async def root():
@@ -33,33 +31,25 @@ async def chat(request: Request):
         return {"response": "⚠️ No prompt received"}
 
     try:
-        # ✅ Router endpoint
-        url = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
-
         payload = {
-            "inputs": prompt,
-            "options": {"use_cache": False},
+            "model": "text-davinci-003",   # GPT-3.5
+            "prompt": prompt,
+            "max_tokens": 200,
+            "temperature": 0.7
         }
 
         headers = {
-            "Authorization": f"Bearer {HF_TOKEN}",
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
             "Content-Type": "application/json"
         }
 
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=30)
 
         if response.status_code != 200:
-            return {"response": f"⚠️ Hugging Face error: {response.status_code} {response.text}"}
+            return {"response": f"⚠️ OpenAI API error: {response.status_code} {response.text}"}
 
         result = response.json()
-
-        # ✅ Extract text from response
-        if isinstance(result, list) and "generated_text" in result[0]:
-            answer = result[0]["generated_text"]
-        elif isinstance(result, dict) and "generated_text" in result:
-            answer = result["generated_text"]
-        else:
-            answer = str(result)
+        answer = result["choices"][0]["text"].strip()
 
         return {"response": answer}
 
