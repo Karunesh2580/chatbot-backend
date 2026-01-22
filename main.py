@@ -17,8 +17,8 @@ app.add_middleware(
 # ✅ Hugging Face token (Render env variables में डालना होगा)
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ✅ Valid Hugging Face model (Gemma-2B)
-HF_MODEL = "google/gemma-2b"
+# ✅ Valid Hugging Face model (Zephyr-7B-Beta → inference supported)
+HF_MODEL = "HuggingFaceH4/zephyr-7b-beta"
 
 @app.get("/")
 async def root():
