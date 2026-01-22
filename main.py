@@ -14,7 +14,9 @@ app.add_middleware(
 )
 
 HF_TOKEN = os.getenv("HF_TOKEN")
-HF_MODEL = "distilgpt2"   # ✅ always works on Hugging Face Inference API
+
+# ✅ Update to a working HF Router-compatible model
+HF_MODEL = "Qwen/Qwen2.5-Coder-7B-Instruct"
 
 @app.get("/")
 async def root():
@@ -29,20 +31,32 @@ async def chat(request: Request):
         return {"response": "⚠️ No prompt received"}
 
     try:
-        response = requests.post(
-            f"https://api-inference.huggingface.co/models/{HF_MODEL}",
-            headers={"Authorization": f"Bearer {HF_TOKEN}"},
-            json={"inputs": prompt},
-            timeout=30
-        )
+        # ✅ NEW Router API URL
+        url = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
+
+        payload = {
+            "inputs": prompt,
+            "options": {"use_cache": False},
+        }
+
+        headers = {
+            "Authorization": f"Bearer {HF_TOKEN}",
+            "Content-Type": "application/json"
+        }
+
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
 
         if response.status_code != 200:
+            # Send back HF error for debug
             return {"response": f"⚠️ Hugging Face error: {response.status_code} {response.text}"}
 
         result = response.json()
 
+        # Some HF models return a list with generated text
         if isinstance(result, list) and "generated_text" in result[0]:
             answer = result[0]["generated_text"]
+        elif isinstance(result, dict) and "generated_text" in result:
+            answer = result["generated_text"]
         else:
             answer = str(result)
 
