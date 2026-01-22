@@ -5,6 +5,7 @@ import requests
 
 app = FastAPI()
 
+# ✅ Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,10 +14,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ✅ Hugging Face Token from Railway ENV
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ✅ Update to a working HF Router-compatible model
-HF_MODEL = "Qwen/Qwen2.5-Coder-7B-Instruct"
+# ✅ Working model
+HF_MODEL = "distilgpt2"
 
 @app.get("/")
 async def root():
@@ -31,7 +33,7 @@ async def chat(request: Request):
         return {"response": "⚠️ No prompt received"}
 
     try:
-        # ✅ NEW Router API URL
+        # ✅ Router endpoint
         url = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
 
         payload = {
@@ -47,12 +49,11 @@ async def chat(request: Request):
         response = requests.post(url, headers=headers, json=payload, timeout=30)
 
         if response.status_code != 200:
-            # Send back HF error for debug
             return {"response": f"⚠️ Hugging Face error: {response.status_code} {response.text}"}
 
         result = response.json()
 
-        # Some HF models return a list with generated text
+        # ✅ Extract text from response
         if isinstance(result, list) and "generated_text" in result[0]:
             answer = result[0]["generated_text"]
         elif isinstance(result, dict) and "generated_text" in result:
