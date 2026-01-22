@@ -17,8 +17,8 @@ app.add_middleware(
 # ✅ Hugging Face token (Render env variables में डालना होगा)
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ✅ Valid Hugging Face model (Zephyr-7B-Beta → inference supported)
-HF_MODEL = "HuggingFaceH4/zephyr-7b-beta"
+# ✅ Valid Hugging Face model (always supported)
+HF_MODEL = "gpt2"
 
 @app.get("/")
 async def root():
@@ -34,7 +34,7 @@ async def chat(request: Request):
 
     try:
         response = requests.post(
-            f"https://router.huggingface.co/hf-inference/{HF_MODEL}",
+            f"https://api-inference.huggingface.co/models/{HF_MODEL}",
             headers={"Authorization": f"Bearer {HF_TOKEN}"},
             json={"inputs": prompt},
             timeout=30
@@ -52,8 +52,6 @@ async def chat(request: Request):
         # ✅ Handle Hugging Face response safely
         if isinstance(result, list) and "generated_text" in result[0]:
             answer = result[0]["generated_text"]
-        elif isinstance(result, dict) and "generated_text" in result:
-            answer = result["generated_text"]
         elif isinstance(result, dict) and "error" in result:
             answer = f"⚠️ Model error: {result['error']}"
         else:
